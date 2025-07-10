@@ -1,0 +1,9 @@
+node_modules/
+dist/
+e2e/
+coverage/
+src/**/*.spec.ts
+src/**/*.mock.ts
+*.js.map
+*.log
+.env.local
