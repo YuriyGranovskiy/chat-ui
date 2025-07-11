@@ -1,1 +1,25 @@
-<p>login works!</p>
+<div class="login-container">
+  <h2>{{ isRegisterMode ? 'Регистрация' : 'Вход' }}</h2>
+
+  <form (ngSubmit)="submit()">
+    <label>
+      Логин:
+      <input [(ngModel)]="username" name="username" required />
+    </label>
+
+    <label>
+      Пароль:
+      <input type="password" [(ngModel)]="password" name="password" required />
+    </label>
+
+    <button type="submit">
+      {{ isRegisterMode ? 'Зарегистрироваться' : 'Войти' }}
+    </button>
+  </form>
+
+  <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <button class="toggle" (click)="toggleMode()">
+    {{ isRegisterMode ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться' }}
+  </button>
+</div>
