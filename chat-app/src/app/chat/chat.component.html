@@ -1,1 +1,25 @@
-<p>chat works!</p>
+<div class="chat-container">
+  <h2>Создать новый чат</h2>
+
+  <div class="form">
+    <label>
+      Название чата:
+      <input [(ngModel)]="name" placeholder="Например: Диалог с магом" />
+    </label>
+
+    <label>
+      Начальное сообщение:
+      <textarea [(ngModel)]="initial" placeholder="Привет! Кто ты?.."></textarea>
+    </label>
+
+    <button (click)="createChat()">Создать чат</button>
+    <div class="error" *ngIf="error">{{ error }}</div>
+  </div>
+
+  <h3>Мои чаты</h3>
+  <ul class="chat-list">
+    <li *ngFor="let chat of chats">
+      🗨️ {{ chat.name }}
+    </li>
+  </ul>
+</div>
