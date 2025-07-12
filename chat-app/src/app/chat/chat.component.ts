@@ -58,4 +58,39 @@ export class ChatComponent implements OnInit {
       }
     });
   }
+
+  selectedChatId: string | null = null;
+  messages: any[] = [];
+  newMessage = '';
+
+  selectChat(chatId: string) {
+    this.selectedChatId = chatId;
+    this.loadMessages(chatId);
+  }
+
+  loadMessages(chatId: string) {
+    this.http.get<any>(`/api/chats/${chatId}/messages`).subscribe({
+      next: (res) => {
+        this.messages = (res.messages || []).sort((a: any, b: any) => a.id.localeCompare(b.id));
+      },
+      error: () => {
+        this.error = 'Ошибка загрузки сообщений';
+      }
+    });
+  }
+
+  sendMessage() {
+    if (!this.newMessage.trim() || !this.selectedChatId) return;
+
+    const body = { message: this.newMessage };
+    this.http.post<any>(`/api/chats/${this.selectedChatId}/messages`, body).subscribe({
+      next: () => {
+        this.newMessage = '';
+        this.loadMessages(this.selectedChatId!);
+      },
+      error: () => {
+        this.error = 'Не удалось отправить сообщение';
+      }
+      });
+  }
 }

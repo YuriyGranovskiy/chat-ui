@@ -1,4 +1,4 @@
-<div class="chat-container">
+<div *ngIf="!selectedChatId" class="chat-container">
   <h2>Создать новый чат</h2>
 
   <div class="form">
@@ -18,8 +18,26 @@
 
   <h3>Мои чаты</h3>
   <ul class="chat-list">
-    <li *ngFor="let chat of chats">
+    <li *ngFor="let chat of chats"
+      (click)="selectChat(chat.id)"
+      [class.selected]="chat.id === selectedChatId">
       🗨️ {{ chat.name }}
     </li>
   </ul>
+</div>
+
+<div *ngIf="selectedChatId" class="chat-box">
+  <h3>Сообщения</h3>
+
+  <div class="messages">
+    <div *ngFor="let msg of messages"
+         [ngClass]="{'message-user': msg.sender_type === 'user', 'message-assistant': msg.sender_type === 'assistant'}">
+      {{ msg.message }}
+    </div>
+  </div>
+
+  <div class="send-box">
+    <input [(ngModel)]="newMessage" placeholder="Введите сообщение..." (keydown.enter)="sendMessage()" />
+    <button (click)="sendMessage()">Отправить</button>
+  </div>
 </div>
