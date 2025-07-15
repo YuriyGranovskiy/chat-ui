@@ -1,0 +1,32 @@
+:host {
+  display: block;
+  background-color: #121212;
+  color: #ffffff;
+  min-height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+  padding: 0;
+  margin: 0;
+}
+
+/* Для вложенных компонентов, если они не перекрывают фон */
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: #90caf9;
+  text-decoration: none;
+}
+
+button {
+  background-color: #1e1e1e;
+  color: white;
+  border: 1px solid #333;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background-color: #333;
+}
