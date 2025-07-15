@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { SocketService } from '../socket.service';
 
 @Component({
   selector: 'app-chat',
@@ -16,12 +17,16 @@ export class ChatComponent implements OnInit {
   name = '';
   initial = '';
   chats: any[] = [];
+  selectedChatId: string | null = null;
+  messages: any[] = [];
+  newMessage = '';
   error = '';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private socketService: SocketService) {}
 
   ngOnInit(): void {
     this.loadChats();
+    this.socketService.connect();    
   }
 
   loadChats() {
@@ -59,13 +64,20 @@ export class ChatComponent implements OnInit {
     });
   }
 
-  selectedChatId: string | null = null;
-  messages: any[] = [];
-  newMessage = '';
-
-  selectChat(chatId: string) {
+  selectChat(chatId: string): void {
+    console.log('selectChat', chatId);
     this.selectedChatId = chatId;
-    this.loadMessages(chatId);
+    this.messages = [];
+    
+    this.socketService.onNewMessage().subscribe((msg) => {
+      // Handle new message acti
+      if (msg) {
+        this.messages.push(msg);
+        this.messages.sort((a, b) => a.id.localeCompare(b.id));
+      }
+    });
+
+    this.socketService.joinChat(chatId);
   }
 
   loadMessages(chatId: string) {
@@ -79,18 +91,9 @@ export class ChatComponent implements OnInit {
     });
   }
 
-  sendMessage() {
+  sendMessage(): void {
     if (!this.newMessage.trim() || !this.selectedChatId) return;
-
-    const body = { message: this.newMessage };
-    this.http.post<any>(`/api/chats/${this.selectedChatId}/messages`, body).subscribe({
-      next: () => {
-        this.newMessage = '';
-        this.loadMessages(this.selectedChatId!);
-      },
-      error: () => {
-        this.error = 'Не удалось отправить сообщение';
-      }
-      });
+    this.socketService.sendMessage(this.selectedChatId, this.newMessage);
+    this.newMessage = '';
   }
 }
