@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -11,8 +11,9 @@ import { SocketService } from '../socket.service';
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
-export class ChatComponent implements OnInit {
+export class ChatComponent implements OnInit, AfterViewInit {
   @Input() userId!: string;
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   name = '';
   initial = '';
@@ -27,6 +28,20 @@ export class ChatComponent implements OnInit {
   ngOnInit(): void {
     this.loadChats();
     this.socketService.connect();    
+  }
+
+  ngAfterViewInit(): void {
+    this.scrollToBottom();
+  }
+
+    private scrollToBottom(): void {
+    try {
+      setTimeout(() => {
+        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+      }, 50); // задержка для отрисовки новых сообщений
+    } catch (err) {
+      console.warn('Scroll error', err);
+    }
   }
 
   loadChats() {
@@ -74,6 +89,7 @@ export class ChatComponent implements OnInit {
       if (msg) {
         this.messages.push(msg);
         this.messages.sort((a, b) => a.id.localeCompare(b.id));
+        this.scrollToBottom();
       }
     });
 

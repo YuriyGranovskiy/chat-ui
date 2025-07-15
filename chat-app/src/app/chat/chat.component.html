@@ -29,7 +29,7 @@
 <div *ngIf="selectedChatId" class="chat-box">
   <h3>Сообщения</h3>
 
-  <div class="messages">
+  <div class="messages" #scrollContainer>
     <div *ngFor="let msg of messages"
          [ngClass]="{'message-user': msg.sender_type === 'user', 'message-assistant': msg.sender_type === 'assistant'}">
       {{ msg.message }}
