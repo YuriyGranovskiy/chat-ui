@@ -12,16 +12,16 @@ export class ChatApiService {
     return this.http.post('/api/login', { username, password });
   }
 
-  getChats(user_id: string) {
-    return this.http.get(`/api/chats?user_id=${user_id}`);
+  getChats() {
+    return this.http.get(`/api/chats`);
   }
 
   getChat(chat_id: string) {
     return this.http.get(`/api/chats/${chat_id}`);
   }
 
-  createChat(user_id: string, name: string, initial: string) {
-    return this.http.post('/api/chats', { user_id, name, initial });
+  createChat(name: string, initial: string) {
+    return this.http.post('/api/chats', { name, initial });
   }
 
   getMessages(chat_id: string, limit?: number, last_message_id?: string) {

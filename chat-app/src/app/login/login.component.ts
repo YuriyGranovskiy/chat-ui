@@ -31,7 +31,8 @@ export class LoginComponent {
 
     this.http.post<any>(url, payload).subscribe({
       next: (res) => {
-        this.loginSuccess.emit(res.user_id);
+        this.loginSuccess.emit(res.access_token);
+        localStorage.setItem('access_token', res.access_token);
       },
       error: (err) => {
         this.errorMessage = 'Ошибка: ' + (err?.error?.message || 'что-то пошло не так');

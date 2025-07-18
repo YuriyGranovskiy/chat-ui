@@ -37,7 +37,9 @@ export class ChatComponent implements OnInit, AfterViewInit {
     private scrollToBottom(): void {
     try {
       setTimeout(() => {
-        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+        if (this.scrollContainer && this.scrollContainer.nativeElement) {
+          this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+        }
       }, 50); // задержка для отрисовки новых сообщений
     } catch (err) {
       console.warn('Scroll error', err);
@@ -45,7 +47,7 @@ export class ChatComponent implements OnInit, AfterViewInit {
   }
 
   loadChats() {
-    this.http.get<any>(`/api/chats?user_id=${this.userId}`).subscribe({
+    this.http.get<any>(`/api/chats`).subscribe({
       next: (res) => {
         this.chats = res.chats;
       },
