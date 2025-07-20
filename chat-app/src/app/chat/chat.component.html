@@ -19,9 +19,17 @@
   <h3>Мои чаты</h3>
   <ul class="chat-list">
     <li *ngFor="let chat of chats"
-      (click)="selectChat(chat.id)"
-      [class.selected]="chat.id === selectedChatId">
-      🗨️ {{ chat.name }}
+        [class.selected]="chat.id === selectedChatId">
+
+      <span (click)="selectChat(chat.id)" class="chat-name">
+        🗨️ {{ chat.name }}
+      </span>
+
+      <button mat-icon-button color="warn"
+              (click)="confirmDelete(chat.id, $event)"
+              matTooltip="Удалить чат">
+        <mat-icon>delete</mat-icon>
+      </button>
     </li>
   </ul>
 </div>

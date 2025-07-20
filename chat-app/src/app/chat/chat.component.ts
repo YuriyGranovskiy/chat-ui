@@ -2,12 +2,16 @@ import { Component, Input, OnInit, AfterViewInit, ViewChild, ElementRef } from '
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { SocketService } from '../socket.service';
+import { DeleteConfirmDialog } from '../delete-confirm-dialog/delete-confirm-dialog.component';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatIconModule],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
@@ -23,7 +27,11 @@ export class ChatComponent implements OnInit, AfterViewInit {
   newMessage = '';
   error = '';
 
-  constructor(private http: HttpClient, private socketService: SocketService) {}
+  constructor(
+    private http: HttpClient,
+    private socketService: SocketService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loadChats();
@@ -113,5 +121,31 @@ export class ChatComponent implements OnInit, AfterViewInit {
     if (!this.newMessage.trim() || !this.selectedChatId) return;
     this.socketService.sendMessage(this.selectedChatId, this.newMessage);
     this.newMessage = '';
+  }
+
+  confirmDelete(chatId: string, event: MouseEvent) {
+    event.stopPropagation(); // чтобы не вызывался selectChat
+    const dialogRef = this.dialog.open(DeleteConfirmDialog);
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.deleteChat(chatId);
+      }
+    });
+  }
+
+  deleteChat(chatId: string) {
+    this.http.delete(`/api/chats/${chatId}`).subscribe({
+      next: () => {
+        this.chats = this.chats.filter((chat) => chat.id !== chatId);
+        if (this.selectedChatId === chatId) {
+          this.selectedChatId = null;
+        }
+        this.snackBar.open('Чат удалён', 'Закрыть', { duration: 2000 });
+      },
+      error: () => {
+        this.snackBar.open('Не удалось удалить чат', 'Закрыть', { duration: 2000 });
+      }
+    });
   }
 }
