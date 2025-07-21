@@ -72,6 +72,7 @@ button {
   padding: 0.5rem 1rem;
   border-radius: 12px 12px 0 12px;
   max-width: 70%;
+  position: relative;
 }
 
 .message-assistant {
@@ -81,6 +82,67 @@ button {
   padding: 0.5rem 1rem;
   border-radius: 12px 12px 12px 0;
   max-width: 70%;
+  position: relative;
+}
+
+.message-user .msg-actions {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.message-assistant .msg-actions {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.message-user .msg-actions button {
+  background: #fff !important;
+  color: #3a3aff !important;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-assistant .msg-actions button {
+  background: #222 !important;
+  color: #eee !important;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-user .msg-actions button:hover,
+.message-assistant .msg-actions button:hover {
+  filter: brightness(0.92);
+}
+
+.message-user .msg-actions button mat-icon,
+.message-assistant .msg-actions button mat-icon {
+  font-size: 16px !important;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
 }
 
 .send-box {

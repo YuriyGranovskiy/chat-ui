@@ -103,6 +103,12 @@ export class ChatComponent implements OnInit, AfterViewInit {
       }
     });
 
+    this.socketService.onMessageDeleted().subscribe((data) => {
+      if (data && data.message_id) {
+        this.messages = this.messages.filter(m => m.id !== data.message_id);
+      }
+    });
+
     this.socketService.joinChat(chatId);
   }
 
@@ -147,5 +153,13 @@ export class ChatComponent implements OnInit, AfterViewInit {
         this.snackBar.open('Не удалось удалить чат', 'Закрыть', { duration: 2000 });
       }
     });
+  }
+
+  deleteMessage(messageId: string) {
+    this.socketService.deleteMessage(messageId);
+  }
+
+  regenerateMessage(messageId: string) {
+    this.socketService.regenerateMessage(messageId);
   }
 }

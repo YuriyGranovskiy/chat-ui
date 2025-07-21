@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
-import { io, Socket } from 'socket.io-client';
+import io from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SocketService {
-  private socket: Socket | null = null;
+  private socket: any = null;
 
   connect(): void {
     const token = localStorage.getItem('access_token');
@@ -31,7 +32,7 @@ export class SocketService {
       console.log('Socket connected successfully. ID:', this.socket?.id);
     });
 
-    this.socket.on('connect_error', (err) => {
+    this.socket.on('connect_error', (err: any) => {
       console.error('Socket connection error:', err.message);
     });
   }
@@ -54,12 +55,31 @@ export class SocketService {
 
   onNewMessage(): Observable<any> {
     return new Observable((observer) => {
-      this.socket?.on('new_message', (data) => {
+      this.socket?.on('new_message', (data: any) => {
         observer.next(data);
       });
       // Очистка при отписке
       return () => {
         this.socket?.off('new_message');
+      };
+    });
+  }
+
+  deleteMessage(messageId: string): void {
+    this.socket?.emit('delete_message', { message_id: messageId });
+  }
+
+  regenerateMessage(messageId: string): void {
+    this.socket?.emit('regenerate_message', { message_id: messageId });
+  }
+
+  onMessageDeleted(): Observable<any> {
+    return new Observable((observer) => {
+      this.socket?.on('message_deleted', (data: any) => {
+        observer.next(data);
+      });
+      return () => {
+        this.socket?.off('message_deleted');
       };
     });
   }

@@ -38,9 +38,19 @@
   <h3>Сообщения</h3>
 
   <div class="messages" #scrollContainer>
-    <div *ngFor="let msg of messages"
+    <div *ngFor="let msg of messages; let i = index"
          [ngClass]="{'message-user': msg.sender_type === 'user', 'message-assistant': msg.sender_type === 'assistant'}">
       {{ msg.message }}
+      <ng-container *ngIf="i === messages.length - 1">
+        <span class="msg-actions">
+          <button mat-icon-button color="warn" (click)="deleteMessage(msg.id)" matTooltip="Удалить сообщение">
+            <mat-icon>delete</mat-icon>
+          </button>
+          <button mat-icon-button color="primary" (click)="regenerateMessage(msg.id)" matTooltip="Регенерировать сообщение">
+            <mat-icon>autorenew</mat-icon>
+          </button>
+        </span>
+      </ng-container>
     </div>
   </div>
 
