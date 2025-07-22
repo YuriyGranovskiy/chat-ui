@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -8,6 +8,20 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { SocketService } from '../socket.service';
 import { DeleteConfirmDialog } from '../delete-confirm-dialog/delete-confirm-dialog.component';
 
+// Интерфейсы для типизации
+interface Chat {
+  id: string;
+  name: string;
+  // другие поля по необходимости
+}
+
+interface Message {
+  id: string;
+  message: string;
+  sender_type: string;
+  // другие поля по необходимости
+}
+
 @Component({
   selector: 'app-chat',
   standalone: true,
@@ -15,20 +29,26 @@ import { DeleteConfirmDialog } from '../delete-confirm-dialog/delete-confirm-dia
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.scss']
 })
-export class ChatComponent implements OnInit, AfterViewInit {
+export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() userId!: string;
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
+  // === STATE ===
   name = '';
   initial = '';
-  chats: any[] = [];
+  chats: Chat[] = [];
   selectedChatId: string | null = null;
-  messages: any[] = [];
+  messages: Message[] = [];
   newMessage = '';
   error = '';
 
+  // Editing state
   editingMessageId: string | null = null;
   editingMessageText: string = '';
+
+  // Ссылки на подписки для отписки
+  private messageSub?: any;
+  private deleteSub?: any;
 
   constructor(
     private http: HttpClient,
@@ -36,52 +56,46 @@ export class ChatComponent implements OnInit, AfterViewInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar) {}
 
+  // === LIFECYCLE ===
   ngOnInit(): void {
     this.loadChats();
-    this.socketService.connect();    
+    this.socketService.connect();
   }
 
   ngAfterViewInit(): void {
     this.scrollToBottom();
   }
 
-    private scrollToBottom(): void {
-    try {
-      setTimeout(() => {
-        if (this.scrollContainer && this.scrollContainer.nativeElement) {
-          this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
-        }
-      }, 50); // задержка для отрисовки новых сообщений
-    } catch (err) {
-      console.warn('Scroll error', err);
-    }
+  ngOnDestroy(): void {
+    this.unsubscribeSocketEvents();
   }
 
+  // === CHAT METHODS ===
+  /** Загрузить список чатов */
   loadChats() {
     this.http.get<any>(`/api/chats`).subscribe({
       next: (res) => {
         this.chats = res.chats;
       },
-      error: (err) => {
+      error: () => {
         this.error = 'Не удалось загрузить чаты';
       }
     });
   }
 
+  /** Создать новый чат */
   createChat() {
     if (!this.name.trim() || !this.initial.trim()) {
       this.error = 'Заполните все поля';
       return;
     }
-
     const body = {
       user_id: this.userId,
       name: this.name,
       initial: this.initial
     };
-
     this.http.post<any>('/api/chats', body).subscribe({
-      next: (res) => {
+      next: () => {
         this.name = '';
         this.initial = '';
         this.loadChats();
@@ -92,57 +106,16 @@ export class ChatComponent implements OnInit, AfterViewInit {
     });
   }
 
+  /** Выбрать чат и подписаться на события */
   selectChat(chatId: string): void {
-    console.log('selectChat', chatId);
     this.selectedChatId = chatId;
     this.messages = [];
-    
-    this.socketService.onNewMessage().subscribe((msg) => {
-      // Handle new message acti
-      if (msg) {
-        this.messages.push(msg);
-        this.messages.sort((a, b) => a.id.localeCompare(b.id));
-        this.scrollToBottom();
-      }
-    });
-
-    this.socketService.onMessageDeleted().subscribe((data) => {
-      if (data && data.message_id) {
-        this.messages = this.messages.filter(m => m.id !== data.message_id);
-      }
-    });
-
+    this.unsubscribeSocketEvents();
+    this.subscribeSocketEvents();
     this.socketService.joinChat(chatId);
   }
 
-  loadMessages(chatId: string) {
-    this.http.get<any>(`/api/chats/${chatId}/messages`).subscribe({
-      next: (res) => {
-        this.messages = (res.messages || []).sort((a: any, b: any) => a.id.localeCompare(b.id));
-      },
-      error: () => {
-        this.error = 'Ошибка загрузки сообщений';
-      }
-    });
-  }
-
-  sendMessage(): void {
-    if (!this.newMessage.trim() || !this.selectedChatId) return;
-    this.socketService.sendMessage(this.selectedChatId, this.newMessage);
-    this.newMessage = '';
-  }
-
-  confirmDelete(chatId: string, event: MouseEvent) {
-    event.stopPropagation(); // чтобы не вызывался selectChat
-    const dialogRef = this.dialog.open(DeleteConfirmDialog);
-
-    dialogRef.afterClosed().subscribe((confirmed) => {
-      if (confirmed) {
-        this.deleteChat(chatId);
-      }
-    });
-  }
-
+  /** Удалить чат */
   deleteChat(chatId: string) {
     this.http.delete(`/api/chats/${chatId}`).subscribe({
       next: () => {
@@ -158,28 +131,63 @@ export class ChatComponent implements OnInit, AfterViewInit {
     });
   }
 
+  /** Подтвердить удаление чата */
+  confirmDelete(chatId: string, event: MouseEvent) {
+    event.stopPropagation();
+    const dialogRef = this.dialog.open(DeleteConfirmDialog);
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.deleteChat(chatId);
+      }
+    });
+  }
+
+  // === MESSAGE METHODS ===
+  /** Загрузить сообщения чата */
+  loadMessages(chatId: string) {
+    this.http.get<any>(`/api/chats/${chatId}/messages`).subscribe({
+      next: (res) => {
+        this.messages = (res.messages || []).sort((a: Message, b: Message) => a.id.localeCompare(b.id));
+      },
+      error: () => {
+        this.error = 'Ошибка загрузки сообщений';
+      }
+    });
+  }
+
+  /** Отправить сообщение */
+  sendMessage(): void {
+    if (!this.newMessage.trim() || !this.selectedChatId) return;
+    this.socketService.sendMessage(this.selectedChatId, this.newMessage);
+    this.newMessage = '';
+  }
+
+  /** Удалить сообщение */
   deleteMessage(messageId: string) {
     this.socketService.deleteMessage(messageId);
   }
 
+  /** Регенерировать сообщение */
   regenerateMessage(messageId: string) {
     this.socketService.regenerateMessage(messageId);
   }
 
-  startEditMessage(msg: any) {
+  /** Начать редактирование сообщения */
+  startEditMessage(msg: Message) {
     this.editingMessageId = msg.id;
     this.editingMessageText = msg.message;
   }
 
+  /** Отменить редактирование сообщения */
   cancelEditMessage() {
     this.editingMessageId = null;
     this.editingMessageText = '';
   }
 
+  /** Применить редактирование сообщения */
   applyEditMessage() {
     if (this.editingMessageId && this.editingMessageText.trim()) {
       this.socketService.editMessage(this.editingMessageId, this.editingMessageText.trim());
-      // Обновить текст сообщения локально
       const msg = this.messages.find(m => m.id === this.editingMessageId);
       if (msg) {
         msg.message = this.editingMessageText.trim();
@@ -188,7 +196,51 @@ export class ChatComponent implements OnInit, AfterViewInit {
     this.cancelEditMessage();
   }
 
-  get filteredMessages() {
+  // === SOCKET EVENTS ===
+  /** Подписаться на события сокета */
+  private subscribeSocketEvents() {
+    this.messageSub = this.socketService.onNewMessage().subscribe((msg: Message) => {
+      if (msg) {
+        this.messages.push(msg);
+        this.messages.sort((a, b) => a.id.localeCompare(b.id));
+        this.scrollToBottom();
+      }
+    });
+    this.deleteSub = this.socketService.onMessageDeleted().subscribe((data: any) => {
+      if (data && data.message_id) {
+        this.messages = this.messages.filter(m => m.id !== data.message_id);
+      }
+    });
+  }
+
+  /** Отписаться от событий сокета */
+  private unsubscribeSocketEvents() {
+    if (this.messageSub) {
+      this.messageSub.unsubscribe();
+      this.messageSub = undefined;
+    }
+    if (this.deleteSub) {
+      this.deleteSub.unsubscribe();
+      this.deleteSub = undefined;
+    }
+  }
+
+  // === UI/UTILS ===
+  /** Прокрутить вниз */
+  private scrollToBottom(): void {
+    try {
+      setTimeout(() => {
+        if (this.scrollContainer && this.scrollContainer.nativeElement) {
+          this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+        }
+      }, 50);
+    } catch (err) {
+      console.warn('Scroll error', err);
+    }
+  }
+
+  /** Только user/assistant сообщения */
+  get filteredMessages(): Message[] {
     return this.messages.filter(m => m.sender_type === 'user' || m.sender_type === 'assistant');
   }
 }
