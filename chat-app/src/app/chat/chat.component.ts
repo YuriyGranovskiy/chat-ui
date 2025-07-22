@@ -243,4 +243,10 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   get filteredMessages(): Message[] {
     return this.messages.filter(m => m.sender_type === 'user' || m.sender_type === 'assistant');
   }
+
+  /** Название выбранного чата или 'Сообщения' */
+  get selectedChatName(): string {
+    const chat = this.chats.find(c => c.id === this.selectedChatId);
+    return chat?.name || 'Сообщения';
+  }
 }

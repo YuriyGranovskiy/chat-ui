@@ -37,7 +37,7 @@
 </div>
 
 <div *ngIf="selectedChatId" class="chat-box">
-  <h3>Сообщения</h3>
+  <h3>{{ selectedChatName }}</h3>
 
   <div class="messages" #scrollContainer>
     <div *ngFor="let msg of filteredMessages; let i = index"
