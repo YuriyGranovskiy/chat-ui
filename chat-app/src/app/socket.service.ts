@@ -83,4 +83,8 @@ export class SocketService {
       };
     });
   }
+
+  editMessage(messageId: string, message: string): void {
+    this.socket?.emit('edit_message', { message_id: messageId, message });
+  }
 }

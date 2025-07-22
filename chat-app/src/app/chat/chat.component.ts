@@ -27,6 +27,9 @@ export class ChatComponent implements OnInit, AfterViewInit {
   newMessage = '';
   error = '';
 
+  editingMessageId: string | null = null;
+  editingMessageText: string = '';
+
   constructor(
     private http: HttpClient,
     private socketService: SocketService,
@@ -161,5 +164,27 @@ export class ChatComponent implements OnInit, AfterViewInit {
 
   regenerateMessage(messageId: string) {
     this.socketService.regenerateMessage(messageId);
+  }
+
+  startEditMessage(msg: any) {
+    this.editingMessageId = msg.id;
+    this.editingMessageText = msg.message;
+  }
+
+  cancelEditMessage() {
+    this.editingMessageId = null;
+    this.editingMessageText = '';
+  }
+
+  applyEditMessage() {
+    if (this.editingMessageId && this.editingMessageText.trim()) {
+      this.socketService.editMessage(this.editingMessageId, this.editingMessageText.trim());
+      // Обновить текст сообщения локально
+      const msg = this.messages.find(m => m.id === this.editingMessageId);
+      if (msg) {
+        msg.message = this.editingMessageText.trim();
+      }
+    }
+    this.cancelEditMessage();
   }
 }

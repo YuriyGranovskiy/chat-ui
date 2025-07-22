@@ -42,17 +42,33 @@
   <div class="messages" #scrollContainer>
     <div *ngFor="let msg of messages; let i = index"
          [ngClass]="{'message-user': msg.sender_type === 'user', 'message-assistant': msg.sender_type === 'assistant'}">
-      {{ msg.message }}
-      <ng-container *ngIf="i === messages.length - 1">
+      <ng-container *ngIf="editingMessageId === msg.id; else viewMode">
+        <input [(ngModel)]="editingMessageText" class="edit-message-input" />
         <span class="msg-actions">
-          <button mat-icon-button color="warn" (click)="deleteMessage(msg.id)" matTooltip="Удалить сообщение">
-            <mat-icon>delete</mat-icon>
+          <button mat-icon-button color="primary" (click)="applyEditMessage()" matTooltip="Применить">
+            <mat-icon>check</mat-icon>
           </button>
-          <button mat-icon-button color="primary" (click)="regenerateMessage(msg.id)" matTooltip="Регенерировать сообщение">
-            <mat-icon>autorenew</mat-icon>
+          <button mat-icon-button color="warn" (click)="cancelEditMessage()" matTooltip="Отмена">
+            <mat-icon>close</mat-icon>
           </button>
         </span>
       </ng-container>
+      <ng-template #viewMode>
+        {{ msg.message }}
+        <span class="msg-actions">
+          <button mat-icon-button color="accent" (click)="startEditMessage(msg)" matTooltip="Редактировать">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <ng-container *ngIf="i === messages.length - 1">
+            <button mat-icon-button color="warn" (click)="deleteMessage(msg.id)" matTooltip="Удалить сообщение">
+              <mat-icon>delete</mat-icon>
+            </button>
+            <button mat-icon-button color="primary" (click)="regenerateMessage(msg.id)" matTooltip="Регенерировать сообщение">
+              <mat-icon>autorenew</mat-icon>
+            </button>
+          </ng-container>
+        </span>
+      </ng-template>
     </div>
   </div>
 
