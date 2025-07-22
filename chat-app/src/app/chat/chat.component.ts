@@ -187,4 +187,8 @@ export class ChatComponent implements OnInit, AfterViewInit {
     }
     this.cancelEditMessage();
   }
+
+  get filteredMessages() {
+    return this.messages.filter(m => m.sender_type === 'user' || m.sender_type === 'assistant');
+  }
 }

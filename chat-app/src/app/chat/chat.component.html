@@ -40,7 +40,7 @@
   <h3>Сообщения</h3>
 
   <div class="messages" #scrollContainer>
-    <div *ngFor="let msg of messages; let i = index"
+    <div *ngFor="let msg of filteredMessages; let i = index"
          [ngClass]="{'message-user': msg.sender_type === 'user', 'message-assistant': msg.sender_type === 'assistant'}">
       <ng-container *ngIf="editingMessageId === msg.id; else viewMode">
         <input [(ngModel)]="editingMessageText" class="edit-message-input" />
@@ -59,7 +59,7 @@
           <button mat-icon-button color="accent" (click)="startEditMessage(msg)" matTooltip="Редактировать">
             <mat-icon>edit</mat-icon>
           </button>
-          <ng-container *ngIf="i === messages.length - 1">
+          <ng-container *ngIf="i === filteredMessages.length - 1">
             <button mat-icon-button color="warn" (click)="deleteMessage(msg.id)" matTooltip="Удалить сообщение">
               <mat-icon>delete</mat-icon>
             </button>
