@@ -12,6 +12,9 @@ const authGuard = () => {
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
   { path: 'login', component: LoginComponent },
-  { path: 'chat', component: ChatComponent, canActivate: [authGuard] },
+  { path: 'chat', canActivate: [authGuard], children: [
+      { path: '', component: ChatComponent },
+      { path: ':id', component: ChatComponent },
+    ] },
   { path: '**', redirectTo: 'login' },
 ]; 

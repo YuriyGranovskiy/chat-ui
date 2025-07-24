@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -7,6 +7,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SocketService } from '../socket.service';
 import { DeleteConfirmDialog } from '../delete-confirm-dialog/delete-confirm-dialog.component';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 // Интерфейсы для типизации
 interface Chat {
@@ -30,14 +32,12 @@ interface Message {
   styleUrls: ['./chat.component.scss']
 })
 export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
-  @Input() userId!: string;
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   // === STATE ===
   name = '';
   initial = '';
   chats: Chat[] = [];
-  selectedChatId: string | null = null;
   messages: Message[] = [];
   newMessage = '';
   error = '';
@@ -49,17 +49,34 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
   // Ссылки на подписки для отписки
   private messageSub?: any;
   private deleteSub?: any;
+  private routeSub?: Subscription;
+
+  selectedChatId: string | null = null;
 
   constructor(
     private http: HttpClient,
     private socketService: SocketService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar) {}
+    private snackBar: MatSnackBar,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {}
 
   // === LIFECYCLE ===
   ngOnInit(): void {
     this.loadChats();
     this.socketService.connect();
+    this.routeSub = this.route.paramMap.subscribe(params => {
+      const chatId = params.get('id');
+      this.selectedChatId = chatId;
+      this.messages = [];
+      this.unsubscribeSocketEvents();
+      if (chatId) {
+        this.loadMessages(chatId);
+        this.subscribeSocketEvents();
+        this.socketService.joinChat(chatId);
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -68,6 +85,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.unsubscribeSocketEvents();
+    this.routeSub?.unsubscribe();
   }
 
   // === CHAT METHODS ===
@@ -90,7 +108,6 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     const body = {
-      user_id: this.userId,
       name: this.name,
       initial: this.initial
     };
@@ -108,11 +125,7 @@ export class ChatComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Выбрать чат и подписаться на события */
   selectChat(chatId: string): void {
-    this.selectedChatId = chatId;
-    this.messages = [];
-    this.unsubscribeSocketEvents();
-    this.subscribeSocketEvents();
-    this.socketService.joinChat(chatId);
+    this.router.navigate(['/chat', chatId]);
   }
 
   /** Удалить чат */
