@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -16,9 +17,7 @@ export class LoginComponent {
   isRegisterMode = false;
   errorMessage = '';
 
-  @Output() loginSuccess = new EventEmitter<string>();
-
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   toggleMode() {
     this.isRegisterMode = !this.isRegisterMode;
@@ -31,8 +30,8 @@ export class LoginComponent {
 
     this.http.post<any>(url, payload).subscribe({
       next: (res) => {
-        this.loginSuccess.emit(res.access_token);
         localStorage.setItem('access_token', res.access_token);
+        this.router.navigate(['/chat']);
       },
       error: (err) => {
         this.errorMessage = 'Ошибка: ' + (err?.error?.message || 'что-то пошло не так');
